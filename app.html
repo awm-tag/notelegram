@@ -1,0 +1,1366 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c1018" />
+  <title>notelegram.com — оплата Telegram-услуг в TON</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css?v=35" />
+</head>
+<body>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" rx="22" fill="#0c1018"/>
+      <circle cx="50" cy="42" r="17" fill="none" stroke="#4dd2ff" stroke-width="3.5"/>
+      <path d="M50 33v18M41 42h18" stroke="#4dd2ff" stroke-width="3.5" stroke-linecap="round"/>
+      <text x="50" y="78" text-anchor="middle" fill="#eaf2ff" font-family="monospace" font-size="11" font-weight="700">AWM</text>
+    </svg>
+  </template>
+
+  <!-- ============ BOOT / LOADING SCREEN ============ -->
+  <div id="bootScreen" class="boot">
+    <div class="boot-inner">
+      <div class="boot-logo-wrap">
+        <span class="logo-mark boot-logo-mark">
+          <img class="logo-mark-img" src="assets/logo-mark.png?v=1" alt="notelegram" draggable="false" />
+        </span>
+      </div>
+      <div class="boot-brand">notelegram<span class="bb-slash">.com</span></div>
+      <div class="boot-tip" id="bootTip" aria-live="polite"></div>
+      <div class="boot-bar"><i id="bootBarFill"></i></div>
+    </div>
+    <div class="boot-legal">Независимый сервис. Не связан с Telegram, Fragment или TON Foundation.<br />Подтверждения сайта — информационные документы. 18+ · Условия — внизу сайта.</div>
+  </div>
+
+  <!-- Ambient background -->
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="bg-shapes" id="bgShapes" aria-hidden="true"></div>
+  <div class="bg-trails" id="bgTrails" aria-hidden="true"></div>
+  <div class="accent-sweep" id="accentSweep" aria-hidden="true"></div>
+
+  <!-- Fixed top bar -->
+  <header class="topbar" data-screen-label="topbar">
+    <button class="brand" type="button" id="brandReload" aria-label="Обновить страницу" title="Обновить страницу">
+      <span class="brand-logo-wrap" aria-hidden="true">
+        <img class="logo-mark-img brand-logo-img2" src="assets/logo-mark.png?v=1" alt="" draggable="false" />
+      </span>
+      <span class="brand-txt">
+        <span class="brand-main">notelegram.com</span>
+        <span class="brand-sub" id="brandService">notelegram.com</span>
+      </span>
+    </button>
+
+    <a class="support-btn" href="https://t.me/NoTelegramSupport" target="_blank" rel="noopener noreferrer" aria-label="Поддержка — Telegram @NoTelegramSupport" title="Написать в поддержку">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 8.8h9M7.5 12h6"/><path d="M21 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.4-3.9A7.5 7.5 0 1 1 21 11.5Z"/></svg>
+      <span class="support-txt">SUPPORT</span>
+    </a>
+
+    <div id="rateChip" class="rate-chip" title="Курс TON/USD" aria-live="polite">
+      <span class="dot"></span>
+      <span class="label">TON</span>
+      <span class="price" id="rateValue">—</span>
+      <span class="arrow" id="rateArrow">→</span>
+    </div>
+
+    <button id="infoBtn" class="icon-btn" type="button" aria-label="Информация">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8.5h.01"/><path d="M11.5 11.5h.5v5"/></svg>
+    </button>
+
+    <div class="lang-switch" role="tablist" aria-label="Язык">
+      <button class="lang-btn active" type="button" data-lang="ru">RU</button>
+      <button class="lang-btn" type="button" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <!-- 3 plates · username · live status+hours · reviews -->
+  <div class="top-id-bar tid-3" data-screen-label="topid">
+    <button id="userPill" class="user-pill tid-plate" type="button">
+      <span class="user-pill-icon">@</span>
+      <span class="user-pill-text">
+        <span class="user-pill-label" data-i18n="usernameLabelShort">USERNAME</span>
+        <span class="user-pill-value" id="userPillValue" data-i18n="userNotRegistered">Не указан</span>
+      </span>
+      <span class="pill-edit">✎</span>
+    </button>
+
+    <button class="tid-plate status-plate" id="workStatus" type="button" data-online="false" data-status="offline" aria-haspopup="dialog" title="Рабочее время 16:30–00:00 по МСК. Нажмите — связь и контакты.">
+      <div class="sp-status">
+        <span class="ws-dot" aria-hidden="true"></span>
+        <span class="sp-state" id="wsState">Не онлайн</span>
+      </div>
+      <div class="sp-mode" id="wsMode">Ручная обработка · услуги 16:30–00:00</div>
+      <div class="sp-hours">
+        <span class="sp-hours-label" id="wsHoursLabel">МСК сейчас</span>
+        <span class="sp-hours-val sp-clock"><span id="wsClock">--:--:--</span><span class="ws-msk"> МСК</span></span>
+      </div>
+    </button>
+
+    <a class="rv-chip tid-plate" id="reviewCounter" href="https://t.me/awm_otziv" target="_blank" rel="noopener noreferrer" aria-label="Отзывы в Telegram">
+      <span class="rv-big-row">
+        <span class="rv-big" data-i18n="reviewsBtn">Отзывы</span>
+        <span class="rv-arrow" aria-hidden="true">↗</span>
+      </span>
+      <span class="rv-count" id="rvCount" aria-live="polite"></span>
+    </a>
+  </div>
+
+  <!-- App shell -->
+  <main class="app">
+    <section class="screen grad-ring" data-screen-label="main">
+      <div class="screen-inner">
+
+        <!-- Hero -->
+        <div class="hero" id="hero">
+          <div class="hero-kicker" id="heroKicker">NOTELEGRAM // PAYMENT</div>
+          <h1 class="hero-title" id="heroTitle">Оплата без лишних шагов</h1>
+          <p class="hero-sub" id="heroSub">Выберите услугу — система проведёт вас по шагам, посчитает сумму и сгенерирует индивидуальный код оплаты.</p>
+          <div class="hero-chart" aria-hidden="true">
+            <canvas id="rateChart" width="200" height="48"></canvas>
+            <div class="hero-chart-label">
+              <span class="rcl-key">TON / USD · 30мин</span>
+              <span class="rcl-val" id="rateChartVal">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service picker -->
+        <div class="panel panel-pick">
+          <div class="panel-head">
+            <div class="panel-title" data-i18n="panelService">Услуга</div>
+            <div class="panel-aside" id="serviceAside">1 / 5</div>
+          </div>
+          <button id="openServicePicker" class="service-picker grad-ring" type="button">
+            <span class="sp-ico" id="spIcon" aria-hidden="true"></span>
+            <span class="sp-text">
+              <span class="sp-main" id="spMain">Оплата товаров и услуг</span>
+              <span class="sp-sub" id="spSub">Оплата любых договорённых позиций.</span>
+            </span>
+            <span class="sp-arrow">›</span>
+          </button>
+        </div>
+
+        <!-- Mode screens -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title" data-i18n="panelParams">Параметры оплаты</div>
+            <div class="panel-aside"><span data-i18n="liveRate">Курс</span>: <span id="rateValueInline">—</span></div>
+          </div>
+
+          <!-- ===== CUSTOM ===== -->
+          <div class="mode-screen active" data-mode="custom">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="wallet" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_custom_name">Оплата товаров и услуг</span>
+                <span class="mh-sub" data-i18n="svc_custom_sub">Оплата любых договорённых позиций.</span>
+              </span>
+            </div>
+            <div class="field" id="customField">
+              <label class="label" for="customReasonSelect">
+                <span data-i18n="reasonLabel">Причина платежа</span>
+                <span class="req">·</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em" data-i18n="reasonHintTag">от этого зависит назначение</span>
+              </label>
+              <div class="reason-select-wrap" id="reasonWrap">
+                <select id="customReasonSelect" class="reason-select native-hidden" autocomplete="off" tabindex="-1" aria-hidden="true">
+                  <option value="other" data-i18n="reasonOther">Другое (указать причину)</option>
+                  <option value="services" data-i18n="reasonServices">Оплата услуг</option>
+                  <option value="debt" data-i18n="reasonDebt">Возврат долга</option>
+                  <option value="donation" data-i18n="reasonDonation">Донат / поддержка</option>
+                  <option value="goods" data-i18n="reasonGoods">Оплата товара</option>
+                  <option value="prepay" data-i18n="reasonPrepay">Предоплата / аванс</option>
+                  <option value="deposit" data-i18n="reasonDeposit">Бронь / депозит</option>
+                  <option value="gift" data-i18n="reasonGift">Подарок</option>
+                  <option value="agreement" data-i18n="reasonAgreement">Оплата по договорённости</option>
+                  <option value="tip" data-i18n="reasonTip">Чаевые</option>
+                </select>
+                <button type="button" class="cdrop-trigger" id="reasonTrigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="cdrop-label" id="reasonTriggerLabel">Другое (указать причину)</span>
+                  <span class="cdrop-chev" aria-hidden="true">▾</span>
+                </button>
+                <div class="cdrop-pop" id="reasonPop" role="listbox" aria-label="Причина платежа" hidden style="display:none"></div>
+              </div>
+              <div class="field reason-custom-field" id="reasonCustomField" hidden>
+                <div class="input-wrap">
+                  <input id="reasonCustomInput" class="input" type="text" maxlength="80" autocomplete="off" data-i18n-ph="reasonCustomPh" placeholder="Укажите причину платежа" />
+                </div>
+              </div>
+              <div class="reason-note" id="reasonNote" data-i18n="reasonNoteOther">Без указания причины платёж считается донатом (добровольной поддержкой), а не оплатой товара или услуги.</div>
+
+              <label class="label" for="customAmount" style="margin-top:14px">
+                <span data-i18n="amountLabel">Сумма оплаты</span>
+                <span class="req">·</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em" data-i18n="minLabel">мин. 0.1 TON</span>
+              </label>
+              <div class="amount-stepper">
+                <button class="step-btn" type="button" data-step="customAmount" data-dir="down">−</button>
+                <div class="amount-display" id="customAmountDisplay">
+                  <div class="amt-row">
+                    <input id="customAmount" class="amt-main" type="text" inputmode="decimal" placeholder="0,1" autocomplete="off" />
+                    <span class="amt-unit">TON</span>
+                  </div>
+                  <div class="amt-sub" id="customAmountUsd">≈ $0.00</div>
+                </div>
+                <button class="step-btn" type="button" data-step="customAmount" data-dir="up">+</button>
+              </div>
+              <div class="hint" data-i18n="customHint">Минимум — 0.1 TON.</div>
+            </div>
+          </div>
+
+          <!-- ===== DEAL ===== -->
+          <div class="mode-screen" data-mode="deal">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="deal" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_deal_name">Сделка</span>
+                <span class="mh-sub" data-i18n="svc_deal_sub">Официальная оплата по сделке.</span>
+              </span>
+            </div>
+
+            <div class="field" id="dealCurField">
+              <label class="label"><span data-i18n="dealCurLabel">Валюта сделки</span></label>
+              <div class="deal-cur-seg" id="dealCurSeg" role="tablist">
+                <button type="button" class="dcs-btn active" data-cur="TON">TON</button>
+                <button type="button" class="dcs-btn" data-cur="USDT">USDT</button>
+              </div>
+              <div class="hint" id="dealCurHint" data-i18n="dealHint">Сумма сделки в TON. С кем и за что — укажете на шаге «Детали», либо вставьте код сделки.</div>
+            </div>
+
+            <div class="field" id="dealField">
+              <label class="label" for="dealAmount">
+                <span data-i18n="dealAmountLabel">Сумма сделки</span>
+                <span class="req">·</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em" data-i18n="minLabel">мин. 0.1 TON</span>
+              </label>
+              <div class="amount-stepper">
+                <button class="step-btn" type="button" data-step="dealAmount" data-dir="down">−</button>
+                <div class="amount-display" id="dealAmountDisplay">
+                  <div class="amt-row">
+                    <input id="dealAmount" class="amt-main" type="text" inputmode="decimal" placeholder="0,1" autocomplete="off" />
+                    <span class="amt-unit" id="dealAmtUnit">TON</span>
+                  </div>
+                  <div class="amt-sub" id="dealAmountUsd">≈ $0.00</div>
+                </div>
+                <button class="step-btn" type="button" data-step="dealAmount" data-dir="up">+</button>
+              </div>
+            </div>
+
+            <div class="notice info">
+              <div class="ic">i</div>
+              <div>
+                <div class="notice-title" data-i18n="dealNoticeTitle">Как проходит сделка</div>
+                <div class="notice-text" data-i18n="dealNoticeText">Я отправляю ссылку — вы заполняете данные и оплачиваете. Сделка фиксируется официально: в чеке остаются сумма, код, дата и стороны. Чек можно переслать в отзывы.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== STARS ===== -->
+          <div class="mode-screen" data-mode="stars">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="star" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_stars_name">Покупка Telegram Stars</span>
+                <span class="mh-sub" data-i18n="svc_stars_sub">Цена пересчитывается по живому курсу TON/USD.</span>
+              </span>
+            </div>
+
+            <div class="info-strip" id="starsInfoStrip">
+              <div class="is-cell">
+                <div class="is-key" data-i18n="isFor100">за 100‫‬☆</div>
+                <div class="is-val" id="isStars100">—</div>
+              </div>
+              <div class="is-cell">
+                <div class="is-key" data-i18n="isMin">мин. пополнения</div>
+                <div class="is-val" id="isStarsMin">—</div>
+              </div>
+              <div class="is-cell">
+                <div class="is-key" data-i18n="isRate">курс TON</div>
+                <div class="is-val" id="isStarsRate">—</div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label">
+                <span data-i18n="packsLabel">Готовые пакеты</span>
+                <span class="discount-hint" data-i18n="packsDiscount">скидки на пакеты</span>
+              </label>
+              <div class="pack-grid" id="starPacks" role="radiogroup" aria-label="Star packs"></div>
+            </div>
+
+            <div class="field" id="starQtyField">
+              <label class="label" for="starQty">
+                <span data-i18n="customQtyLabel">Своё количество звёзд</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em">50 – 1 000 000</span>
+              </label>
+              <div class="amount-stepper">
+                <button class="step-btn" type="button" data-step="starQty" data-dir="down">−</button>
+                <div class="amount-display" id="starQtyDisplay">
+                  <div class="amt-row">
+                    <input id="starQty" class="amt-main" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="50" autocomplete="off" />
+                    <span class="amt-unit">stars</span>
+                  </div>
+                  <div class="amt-sub" id="starQtyMeta">≈ $0.00 · ≈ 0 TON</div>
+                </div>
+                <button class="step-btn" type="button" data-step="starQty" data-dir="up">+</button>
+              </div>
+              <div class="hint" data-i18n="starsHint"><b>1 звезда = $0.015.</b> Финальная цена в TON считается по курсу, обновляется каждые 15 сек.</div>
+            </div>
+
+            <div class="notice info">
+              <div class="ic">i</div>
+              <div>
+                <div class="notice-title" data-i18n="starsNoticeTitle">Как доставляются звёзды</div>
+                <div class="notice-text" data-i18n="starsNoticeText">После оплаты звёзды зачисляются вручную в течение нескольких минут. Передавать ничего не нужно — username в чеке уже учтён.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== PREMIUM ===== -->
+          <div class="mode-screen" data-mode="premium">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="premium" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_premium_name">Telegram Premium</span>
+                <span class="mh-sub" data-i18n="svc_premium_sub">Цены в USD и TON. Сервисный сбор +5%.</span>
+              </span>
+            </div>
+
+            <div class="field" id="premiumField">
+              <label class="label">
+                <span data-i18n="durationLabel">Срок подписки</span>
+                <span class="discount-hint" data-i18n="tiersDiscount">скидки 1–3%</span>
+              </label>
+              <div class="tier-grid" id="tierGrid" role="radiogroup" aria-label="Premium tiers"></div>
+              <div class="hint" data-i18n="premiumHint">К каждой покупке добавляется сервисный сбор <b>+5%</b>. Итоговая сумма в TON пересчитывается по живому курсу.</div>
+            </div>
+
+            <div class="field cart-only" id="premiumGiftField" hidden>
+              <label class="label" for="premiumGift">
+                <span data-i18n="premiumGiftLabel">Кому подарить Premium</span>
+              </label>
+              <div class="input-wrap">
+                <input id="premiumGift" class="input with-tools" type="text" placeholder="@username" name="awm_tg_username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="premiumGift" aria-label="Действие"></button>
+              </div>
+              <div class="hint" data-i18n="premiumGiftHint">Оставьте пустым, чтобы оформить Premium на себя. Укажите @username получателя, если это подарок.</div>
+            </div>
+          </div>
+
+          <!-- ===== MINT ===== -->
+          <div class="mode-screen" data-mode="mint">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="mint" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_mint_name">Минт юзернейма</span>
+                <span class="mh-sub" data-i18n="svc_mint_sub">База 7 TON + комиссия от ставки.</span>
+              </span>
+            </div>
+
+            <div class="field" id="mintPackField">
+              <label class="label">
+                <span data-i18n="bidPacksLabel">Готовые ставки</span>
+                <span class="discount-hint" data-i18n="bidPacksDiscount">скидки на ставку</span>
+              </label>
+              <div class="pack-grid bid-pack-grid" id="mintPacks" role="radiogroup" aria-label="Bid packs"></div>
+            </div>
+
+            <div class="field" id="mintField">
+              <label class="label" for="mintBid">
+                <span data-i18n="mintBidLabel">Размер ставки</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em" data-i18n="minBid50">мин. 50 TON</span>
+              </label>
+              <div class="amount-stepper">
+                <button class="step-btn" type="button" data-step="mintBid" data-dir="down">−</button>
+                <div class="amount-display" id="mintBidDisplay">
+                  <div class="amt-row">
+                    <input id="mintBid" class="amt-main" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="50" autocomplete="off" />
+                    <span class="amt-unit">TON</span>
+                  </div>
+                  <div class="amt-sub" id="mintBidMeta">+ 0 TON комиссия · база 7 TON</div>
+                </div>
+                <button class="step-btn" type="button" data-step="mintBid" data-dir="up">+</button>
+              </div>
+              <div class="hint" data-i18n="mintHint">Комиссия считается автоматически. Пример: ставка 100 TON → комиссия 10 TON, итог 17 TON.</div>
+            </div>
+
+            <div class="field cart-only" id="mintWalletField" hidden>
+              <label class="label" for="mintWallet">
+                <span data-i18n="mintWalletLabel">Кошелёк для зачисления NFT</span>
+                <span class="req">*</span>
+              </label>
+              <div class="input-wrap">
+                <input id="mintWallet" class="input with-tools" type="text" placeholder="UQ…" name="awm_ton_wallet" autocomplete="on" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="mintWallet" aria-label="Действие"></button>
+              </div>
+              <div class="hint" data-i18n="mintWalletHint">NFT юзернейм выпускается на ваш внешний TON-кошелёк (Tonkeeper / MyTonWallet / TonHub). Рекламная комиссия Fragment уже включена.</div>
+            </div>
+
+            <div class="field cart-only" id="mintContactField" hidden>
+              <label class="label" for="mintContact">
+                <span data-i18n="contactLabel">Доп. контакт для связи (опционально)</span>
+              </label>
+              <div class="input-wrap">
+                <input id="mintContact" class="input with-tools" type="text" placeholder="email / discord / x.com / …" name="awm_contact" autocomplete="on" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="mintContact" aria-label="Действие"></button>
+              </div>
+              <div class="hint" data-i18n="contactHint">На случай, если связь через Telegram не сработает. Шаг можно пропустить.</div>
+            </div>
+
+            <details class="info-acc" id="mintInfoAcc">
+              <summary class="info-acc-sum">
+                <span class="info-acc-ico" aria-hidden="true">!</span>
+                <span class="info-acc-tx" data-i18n="mintInfoToggle">Условия, сроки и предупреждения</span>
+                <span class="info-acc-chev" aria-hidden="true">›</span>
+              </summary>
+              <div class="info-acc-body">
+            <div class="notice info">
+              <div class="ic">ƨ</div>
+              <div>
+                <div class="notice-title" data-i18n="nftWhatTitle">Что такое NFT-юзернейм</div>
+                <div class="notice-text" data-i18n="nftWhatText">NFT-юзернейм — это токенизированный @username в блокчейне TON через Fragment. Он хранится на вашем внешнем кошельке, его можно продавать и передавать — это полноценный NFT, не привязанный к Telegram-аккаунту.</div>
+              </div>
+            </div>
+            <div class="notice">
+              <div class="ic">☰</div>
+              <div>
+                <div class="notice-title" data-i18n="mintFlowTitle">Как проходит минт — по шагам</div>
+                <div class="notice-text" data-i18n="mintFlowText">1. После оплаты я получаю уведомление — связываемся. 2. Вы передаёте мне открытый канал с юзернеймом (именно канал, не просто тег) на специальный аккаунт, который я укажу. 3. Я выставляю юзернейм на аукцион fragment.com за 10 TON (GRAM) — аукцион идёт неделю. 4. Через неделю юзернейм становится NFT — отправляю его на ваш кошелёк (±1 день).</div>
+              </div>
+            </div>
+            <div class="notice warn">
+              <div class="ic">!</div>
+              <div>
+                <div class="notice-title" data-i18n="mint2faTitle">Нужен пароль 2FA</div>
+                <div class="notice-text" data-i18n="mint2faText">Для передачи канала вы должны знать свой пароль 2FA. Если он потерян — восстановление займёт ещё около недели, и за эту задержку деньги не возвращаются. Юзернейм должен быть на канале не меньше 2 недель. После запуска минта возврат невозможен.</div>
+              </div>
+            </div>
+            <div class="notice">
+              <div class="ic">⎘</div>
+              <div>
+                <div class="notice-title" data-i18n="receiptChatTitle">Чек дублируется мне в чат</div>
+                <div class="notice-text" data-i18n="receiptChatText">Каждый чек автоматически дублируется мне. Лучше всего писать уже с чеком — либо сначала спросить, работает ли сервис сейчас.</div>
+              </div>
+            </div>
+            <div class="notice info">
+              <div class="ic">↩</div>
+              <div>
+                <div class="notice-title" data-i18n="refundTitle">Возвраты — вы остаётесь в плюсе</div>
+                <div class="notice-text" data-i18n="refundText">Если юзернейм потерян по нашей вине (ставку перебили, ошибка сервиса и т.п.): за сам юзернейм (только канал) возвращаем $3, а за услугу — ВСЕ потраченные вами деньги плюс скидку на следующую покупку. То есть в итоге вы уходите в плюс.</div>
+              </div>
+            </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- ===== BOOST ===== -->
+          <div class="mode-screen" data-mode="boost">
+            <div class="mode-head">
+              <span class="mh-ico" data-ico="boost" aria-hidden="true"></span>
+              <span class="mh-text">
+                <span class="mh-title" data-i18n="svc_boost_name">Повышение ставки</span>
+                <span class="mh-sub" data-i18n="svc_boost_sub">Указанный юзернейм — обязательно.</span>
+              </span>
+            </div>
+
+            <div class="field cart-only" id="boostTargetField" hidden>
+              <label class="label" for="boostTarget">
+                <span data-i18n="boostTargetLabel">NFT-юзернейм для повышения ставки</span>
+                <span class="req">*</span>
+              </label>
+              <div class="input-wrap">
+                <input id="boostTarget" class="input with-tools" type="text" placeholder="@username" name="awm_tg_username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="boostTarget" aria-label="Действие"></button>
+              </div>
+              <div class="hint" data-i18n="boostTargetHint">Юзернейм должен уже быть выпущен как NFT на Fragment (на чьём-то TON-кошельке) — мы поднимаем видимую ставку в аукционе.</div>
+            </div>
+
+            <div class="field" id="boostPackField">
+              <label class="label">
+                <span data-i18n="bidPacksLabel">Готовые ставки</span>
+                <span class="discount-hint" data-i18n="bidPacksDiscount">скидки на ставку</span>
+              </label>
+              <div class="pack-grid bid-pack-grid" id="boostPacks" role="radiogroup" aria-label="Bid packs"></div>
+            </div>
+
+            <div class="field" id="boostField">
+              <label class="label" for="boostBid">
+                <span data-i18n="boostBidLabel">Сумма повышения ставки</span>
+                <span style="color:var(--ink-mute);font-weight:600;font-size:11px;letter-spacing:.04em" data-i18n="minBid50">мин. 50 TON</span>
+              </label>
+              <div class="amount-stepper">
+                <button class="step-btn" type="button" data-step="boostBid" data-dir="down">−</button>
+                <div class="amount-display" id="boostBidDisplay">
+                  <div class="amt-row">
+                    <input id="boostBid" class="amt-main" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="50" autocomplete="off" />
+                    <span class="amt-unit">TON</span>
+                  </div>
+                  <div class="amt-sub" id="boostBidMeta">≈ $0.00 · комиссия 0 TON</div>
+                </div>
+                <button class="step-btn" type="button" data-step="boostBid" data-dir="up">+</button>
+              </div>
+              <div class="hint" data-i18n="boostHint">К оплате — только комиссия от введённой ставки. Тарифная сетка: 10% → 7.5% (чем выше ставка, тем меньше %).</div>
+            </div>
+
+            <div class="field cart-only" id="returnWalletField" hidden>
+              <label class="label" for="returnWallet">
+                <span data-i18n="returnWalletLabel">Кошелёк для возврата (обязательно)</span>
+              </label>
+              <div class="input-wrap">
+                <input id="returnWallet" class="input with-tools" type="text" placeholder="UQ…" name="awm_ton_wallet" autocomplete="on" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="returnWallet" aria-label="Действие"></button>
+              </div>
+            </div>
+
+            <div class="field cart-only" id="boostContactField" hidden>
+              <label class="label" for="boostContact">
+                <span data-i18n="contactLabel">Доп. контакт для связи (опционально)</span>
+              </label>
+              <div class="input-wrap">
+                <input id="boostContact" class="input with-tools" type="text" placeholder="email / discord / x.com / …" name="awm_contact" autocomplete="on" autocapitalize="none" autocorrect="off" spellcheck="false" />
+                <button class="tool-btn" type="button" data-tool-target="boostContact" aria-label="Действие"></button>
+              </div>
+              <div class="hint" data-i18n="contactHint">На случай, если связь через Telegram не сработает. Шаг можно пропустить.</div>
+            </div>
+
+            <details class="info-acc" id="boostInfoAcc">
+              <summary class="info-acc-sum">
+                <span class="info-acc-ico" aria-hidden="true">!</span>
+                <span class="info-acc-tx" data-i18n="mintInfoToggle">Условия, сроки и предупреждения</span>
+                <span class="info-acc-chev" aria-hidden="true">›</span>
+              </summary>
+              <div class="info-acc-body">
+            <div class="notice">
+              <div class="ic">☰</div>
+              <div>
+                <div class="notice-title" data-i18n="boostFlowTitle">Как работает накрутка</div>
+                <div class="notice-text" data-i18n="boostFlowText">Вы передаёте мне NFT-юзернейм — я выставляю его на ПРОДАЖУ на fragment.com за нужную вам сумму и выкупаю со второго кошелька. Видимая цена растёт. Fragment забирает 5% — это входит в комиссию. После — NFT возвращается на указанный кошелёк для возврата. Детали обговариваем в личке.</div>
+              </div>
+            </div>
+            <div class="notice warn">
+              <div class="ic">!</div>
+              <div>
+                <div class="notice-title" data-i18n="boostNoRefundTitle">Возврат по ставке</div>
+                <div class="notice-text" data-i18n="boostNoRefundText">После запуска операции деньги за ставку не возвращаются. Сумму можно увеличить доплатой через «Оплату товаров и услуг».</div>
+              </div>
+            </div>
+            <div class="notice">
+              <div class="ic">↻</div>
+              <div>
+                <div class="notice-title" data-i18n="mintBidTitle">Если ставку перебьют</div>
+                <div class="notice-text" data-i18n="mintBidText">До 3 перебитий свыше 2 TON каждое я перекрываю за счёт сервиса — без доплат. Хотите итоговую ставку выше — доплата по тарифу «Повышение ставки», но без лимита в 50 TON. Сумму ставки можно изменить доплатой через «Оплату товаров и услуг».</div>
+              </div>
+            </div>
+            <div class="notice">
+              <div class="ic">⎘</div>
+              <div>
+                <div class="notice-title" data-i18n="receiptChatTitle">Чек дублируется мне в чат</div>
+                <div class="notice-text" data-i18n="receiptChatText">Каждый чек автоматически дублируется мне. Лучше всего писать уже с чеком — либо сначала спросить, работает ли сервис сейчас.</div>
+              </div>
+            </div>
+            <div class="notice info">
+              <div class="ic">↩</div>
+              <div>
+                <div class="notice-title" data-i18n="refundTitle">Возвраты — вы остаётесь в плюсе</div>
+                <div class="notice-text" data-i18n="refundText">Если юзернейм потерян по нашей вине (ставку перебили, ошибка сервиса и т.п.): за сам юзернейм (только канал) возвращаем $3, а за услугу — ВСЕ потраченные вами деньги плюс скидку на следующую покупку. То есть в итоге вы уходите в плюс.</div>
+              </div>
+            </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- Live summary -->
+          <div class="summary" id="liveSummary">
+            <div class="summary-row">
+              <span class="k" data-i18n="sumService">Услуга</span>
+              <span class="v" id="sumService">—</span>
+            </div>
+            <div class="summary-row" id="sumBaseRow">
+              <span class="k" id="sumBaseKey" data-i18n="sumBase">Сумма</span>
+              <span class="v" id="sumBaseVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="sumFeeRow">
+              <span class="k" id="sumFeeKey" data-i18n="sumFee">Комиссия</span>
+              <span class="v" id="sumFeeVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="sumDiscRow">
+              <span class="k" data-i18n="sumDiscount">Скидка</span>
+              <span class="v save" id="sumDiscVal">—</span>
+            </div>
+            <div class="summary-row total">
+              <span class="k" data-i18n="sumTotal">Итог к оплате</span>
+              <span class="v" id="sumTotalVal">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-wrap">
+          <button id="payCta" class="cta" type="button">
+            <span data-i18n="ctaText">Открыть корзину</span>
+            <span class="cta-amount" id="ctaAmount">· 0 TON</span>
+          </button>
+          <div class="cta-hint" id="ctaHint" aria-live="polite"></div>
+        </div>
+
+      </div>
+    </section>
+
+  <!-- ============ FOOTER · DISCLAIMER ============ -->
+  <footer class="site-foot" data-screen-label="footer">
+    <div class="foot-inner">
+      <div class="foot-brand">
+        <img class="foot-logo-img" src="assets/logo-mark.png?v=1" alt="notelegram" draggable="false" />
+        <div class="foot-logo">notelegram.com</div>
+        <p class="foot-tag" data-i18n="footTag">Независимый сервис оплаты Telegram-услуг через TON. Не связан с Telegram.</p>
+      </div>
+
+      <button type="button" class="foot-disc-toggle" id="footDiscToggle" aria-haspopup="dialog" aria-controls="discOverlay">
+        <span data-i18n="footDiscOpen">Дисклеймер и условия пользования</span>
+        <span class="fd-chevron" aria-hidden="true">↗</span>
+      </button>
+
+      <div class="foot-copy">© <span id="footYear">2026</span> notelegram.com · <span data-i18n="footMadeWith">сделано частным лицом с помощью ИИ</span></div>
+    </div>
+  </footer>
+  </main>
+
+  <!-- ============ DISCLAIMER SHEET (slide-out) ============ -->
+  <div id="discOverlay" class="overlay disc-overlay" aria-hidden="true">
+    <div class="sheet disc-sheet" role="dialog" aria-modal="true" aria-label="Дисклеймер и условия пользования">
+      <div class="sheet-head">
+        <div class="sheet-title" data-i18n="discTitle">Дисклеймер и условия пользования</div>
+        <button type="button" class="sheet-close" id="discClose" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="disc-body">
+        <p class="disc-meta">Сайт: notelegram.com · Дата последнего обновления: 11 июня 2026</p>
+
+        <p class="disc-lead"><strong>Кратко.</strong> notelegram.com — независимый неофициальный сервис, созданный частным разработчиком. Сайт не связан с Telegram, Telegram FZ-LLC, Павлом Дуровым, Fragment, TON Foundation или Tonkeeper, не спонсируется и не одобрен ими. Само название домена («no telegram») прямо указывает на отсутствие связи с Telegram. Все товарные знаки принадлежат их владельцам. Услуги носят неофициальный посреднический характер и исполняются через публичные сторонние платформы. Все подтверждения и квитанции Сайта — информационные документы, не являющиеся фискальными чеками или официальными документами третьих лиц. Сайт разработан с использованием инструментов искусственного интеллекта. Используя сайт, вы принимаете полные Условия пользования ниже.</p>
+
+        <h4>1. Общие положения</h4>
+        <p>1.1. Настоящие Условия пользования (далее — «Условия») регулируют порядок доступа и использования веб-сайта notelegram.com, включая все его поддомены, в том числе api.notelegram.com (далее — «Сайт»), а также порядок оказания услуг, описанных на Сайте (далее — «Услуги»).</p>
+        <p>1.2. Оператором Сайта является частное лицо — независимый разработчик (далее — «Разработчик», «Оператор», «я»). Оператор Сайта не является юридическим лицом, компанией, организацией, агентством, официальным представителем или дистрибьютором какой-либо третьей стороны.</p>
+        <p>1.3. Используя Сайт любым способом — включая просмотр страниц, оформление заказа, оплату или любое иное взаимодействие — вы (далее — «Пользователь») подтверждаете, что полностью прочитали, поняли и безоговорочно приняли настоящие Условия. Если вы не согласны с любым положением настоящих Условий, вы обязаны немедленно прекратить использование Сайта и не пользоваться Услугами.</p>
+        <p>1.4. Настоящие Условия представляют собой публичную оферту в части, не противоречащей применимому законодательству. Фактическое использование Сайта и/или оплата Услуг считается полным и безоговорочным акцептом настоящих Условий.</p>
+
+        <h4>2. Отсутствие аффилированности с Telegram и связанными сторонами</h4>
+        <p>2.1. Сайт notelegram.com, его Оператор и все предоставляемые Услуги <strong>не имеют никакого отношения</strong> к: Telegram Messenger Inc., Telegram FZ-LLC, Telegram Group Inc. и любым иным лицам группы Telegram; Павлу Дурову, Николаю Дурову и любым иным основателям, руководителям, сотрудникам или представителям Telegram; платформе Fragment (fragment.com) и её операторам; TON Foundation, The Open Network, TON Society и любым иным организациям экосистемы TON; разработчикам и операторам кошелька Tonkeeper (Ton Apps Group и связанные лица); любым иным официальным сервисам, продуктам, партнёрам и представителям вышеуказанных лиц.</p>
+        <p>2.2. Сайт не является официальным сайтом Telegram, не одобрен, не сертифицирован, не лицензирован, не проверен и не уполномочен компанией Telegram или любой из перечисленных сторон. Никакая из указанных сторон не контролирует деятельность Сайта, не несёт ответственности за его содержание и не участвует в оказании Услуг.</p>
+        <p>2.3. <strong>О доменном имени.</strong> Доменное имя notelegram.com зарегистрировано Оператором через аккредитованного регистратора и используется исключительно как адрес Сайта. Само доменное имя содержит отрицание («no telegram» — буквально «не телеграм») и прямо указывает на то, что Сайт не является ресурсом Telegram. Регистрация и использование данного домена не означает и не подразумевает связи, партнёрства, одобрения, спонсорства или аффилированности с Telegram или иными лицами из п. 2.1. Единственная связь домена с Telegram — то, что предметом Услуг выступают цифровые продукты, функционирующие в экосистеме Telegram, что является описанием сферы деятельности, а не указанием на принадлежность.</p>
+        <p>2.4. Все упоминания наименований «Telegram», «Telegram Premium», «Telegram Stars», «Fragment», «TON», «Toncoin», «Tonkeeper» и любых иных товарных знаков, логотипов и фирменных наименований используются исключительно в номинативных (описательных) целях — для идентификации товаров и услуг, в отношении которых оказываются посреднические Услуги. Все товарные знаки являются собственностью их законных правообладателей. Их упоминание не означает одобрения, спонсорства или аффилированности.</p>
+
+        <h4>3. Независимость и отсутствие спонсорства</h4>
+        <p>3.1. Сайт является полностью независимым проектом. Оператор: не получает спонсорской поддержки, грантов, инвестиций или финансирования от третьих лиц, компаний, фондов или организаций; не состоит в партнёрских, агентских, дилерских, франчайзинговых или иных договорных отношениях с Telegram, Fragment, TON Foundation, Tonkeeper или иными лицами из раздела 2; не размещает оплаченную рекламу третьих лиц; действует исключительно от собственного имени, за собственный счёт и под собственную ответственность.</p>
+        <p>3.2. Любые сходства оформления, терминологии или функциональности Сайта с продуктами третьих лиц обусловлены исключительно предметной областью Услуг и не свидетельствуют о связи с этими лицами.</p>
+
+        <h4>4. Об Операторе и происхождении Сайта</h4>
+        <p>4.1. Сайт разработан, опубликован и администрируется лично Оператором — частным независимым разработчиком, действующим как физическое лицо, а не как организация, компания или коллектив.</p>
+        <p>4.2. При разработке Сайта, его кода, интерфейса и текстов использовались инструменты искусственного интеллекта (генеративные ИИ-модели). Пользователь уведомлён и соглашается, что часть содержимого Сайта, включая код и тексты (в т. ч. настоящие Условия), создана или доработана с применением технологий ИИ под контролем Оператора. Оператор предпринимает разумные усилия для проверки такого содержимого, но не гарантирует его абсолютную безошибочность.</p>
+        <p>4.3. Оператор оставляет за собой право в любой момент изменять, приостанавливать или прекращать работу Сайта или любой его части без предварительного уведомления.</p>
+
+        <h4>5. Характер и порядок оказания Услуг</h4>
+        <p>5.1. Услуги носят неофициальный посреднический (агентский по существу) характер. Оператор не производит, не выпускает и не контролирует цифровые продукты, являющиеся предметом Услуг (включая, но не ограничиваясь: Telegram Premium, Telegram Stars, коллекционные имена пользователей, иные цифровые активы и услуги экосистемы Telegram/TON).</p>
+        <p>5.2. Исполнение заказов осуществляется Оператором вручную или автоматизированно через общедоступные сторонние платформы и приложения, включая, но не ограничиваясь: платформу Fragment (fragment.com), некастодиальный кошелёк Tonkeeper, иные публичные сервисы сети TON и официальные интерфейсы Telegram. Оператор выступает лишь техническим посредником, который по поручению Пользователя и за его счёт совершает действия на указанных платформах на тех же условиях, которые доступны любому пользователю сети Интернет.</p>
+        <p>5.3. Пользователь понимает и соглашается, что: сторонние платформы (Fragment, Tonkeeper, Telegram и др.) — самостоятельные сервисы со своими условиями, и Оператор не контролирует их работу, доступность, тарифы и правила; результат оказания Услуги зависит от работоспособности и правил указанных платформ; любые сбои, задержки, изменения условий, блокировки находятся вне контроля Оператора; используя Услуги, Пользователь обязуется соблюдать условия использования соответствующих платформ.</p>
+        <p>5.4. Оператор не гарантирует постоянную доступность Услуг, фиксированность цен (в т. ч. вследствие волатильности курса Toncoin и иных валют), сроков исполнения и наличия конкретных цифровых продуктов.</p>
+
+        <h4>6. Подтверждения заказов, квитанции и «чеки»</h4>
+        <p>6.1. Любые подтверждения, квитанции, «чеки», коды заказов, счета, уведомления и иные документы или сообщения, формируемые Сайтом или направляемые Оператором (далее — «Подтверждения»), являются исключительно информационными внутренними документами Сайта для отслеживания статуса заказа между Пользователем и Оператором.</p>
+        <p>6.2. Подтверждения <strong>не являются</strong>: официальными документами Telegram, Fragment, TON Foundation, Tonkeeper или иных третьих лиц; фискальными (кассовыми) чеками, бланками строгой отчётности или иными документами законодательства о ККТ; бухгалтерскими, налоговыми или платёжными документами установленной формы; сертификатами, лицензиями, гарантийными талонами или правоустанавливающими документами.</p>
+        <p>6.3. Подтверждения не подлежат использованию в качестве официальных документов в отношениях с третьими лицами, государственными органами или организациями. Оператор не несёт ответственности за любое использование Подтверждений не по их прямому информационному назначению.</p>
+        <p>6.4. Внешний вид Подтверждений разработан Оператором самостоятельно и не воспроизводит официальные документы третьих лиц; любое сходство случайно.</p>
+
+        <h4>7. Криптовалюта и финансовые риски</h4>
+        <p>7.1. Оплата Услуг может осуществляться с использованием криптовалюты (в т. ч. Toncoin/TON). Пользователь подтверждает, что осознаёт и принимает все риски криптовалютных операций: высокую волатильность курса, необратимость транзакций, риск ошибки при указании адреса или суммы, регуляторные риски в своей юрисдикции.</p>
+        <p>7.2. Транзакции в блокчейне TON необратимы. Оператор не имеет технической возможности отменить, отозвать или изменить подтверждённую блокчейн-транзакцию.</p>
+        <p>7.3. Оператор не является финансовой организацией, платёжной системой, обменным пунктом, брокером, инвестиционным консультантом или поставщиком финансовых услуг. Ничто на Сайте не является финансовой, инвестиционной, налоговой или юридической консультацией.</p>
+        <p>7.4. Пользователь самостоятельно несёт ответственность за соблюдение законодательства своей юрисдикции в отношении операций с криптовалютой и цифровыми активами, включая возможные налоговые обязательства.</p>
+
+        <h4>8. Обязанности и заверения Пользователя</h4>
+        <p>8.1. Используя Сайт, Пользователь заверяет и гарантирует, что: достиг возраста дееспособности по своему законодательству (и в любом случае не менее 18 лет) либо действует с согласия законного представителя; использует Услуги исключительно в законных целях; не использует Сайт для отмывания средств, финансирования противоправной деятельности, обхода санкций или иных незаконных действий; предоставляет достоверные данные для исполнения заказа (имя пользователя Telegram, адрес кошелька и т. п.); понимает неофициальный характер Услуг и принимает связанные риски.</p>
+        <p>8.2. Оператор вправе отказать в оказании Услуг любому лицу без объяснения причин, в т. ч. при подозрении на нарушение Условий или законодательства.</p>
+
+        <h4>9. Отказ от гарантий</h4>
+        <p>9.1. Сайт и Услуги предоставляются на условиях «КАК ЕСТЬ» («AS IS») и «ПО МЕРЕ ДОСТУПНОСТИ» («AS AVAILABLE») без каких-либо гарантий, явных или подразумеваемых, в максимальной степени, допустимой законодательством.</p>
+        <p>9.2. Оператор не гарантирует, что: Сайт будет работать бесперебойно и без ошибок; результаты использования Услуг будут соответствовать ожиданиям; любые дефекты будут исправлены; Сайт свободен от вредоносных компонентов (при том, что Оператор предпринимает разумные меры безопасности).</p>
+        <p>9.3. Никакая информация, полученная Пользователем от Оператора или через Сайт, не создаёт гарантий, прямо не указанных в настоящих Условиях.</p>
+
+        <h4>10. Ограничение ответственности</h4>
+        <p>10.1. В максимальной степени, допустимой законодательством, Оператор не несёт ответственности за: любые косвенные, случайные, штрафные, специальные или последующие убытки, упущенную выгоду, потерю данных или деловой репутации; действия, бездействие, сбои, изменения правил или блокировки со стороны Telegram, Fragment, Tonkeeper, сети TON и иных третьих лиц; блокировку, ограничение или удаление аккаунта Пользователя в Telegram или на иных платформах по любым причинам; последствия предоставления Пользователем неверных данных; колебания курсов валют и криптовалют; обстоятельства непреодолимой силы.</p>
+        <p>10.2. В любом случае совокупная ответственность Оператора по любым требованиям ограничивается суммой, фактически уплаченной Пользователем за конкретный заказ, в связи с которым возникло требование.</p>
+        <p>10.3. Положения раздела не имеют целью исключить или ограничить ответственность, которая не может быть исключена в силу императивных норм законодательства (включая нормы о защите прав потребителей, если применимы).</p>
+
+        <h4>11. Возвраты и претензии</h4>
+        <p>11.1. Ввиду цифрового характера Услуг и необратимости блокчейн-транзакций возврат средств после начала исполнения заказа по общему правилу невозможен, за исключением случаев, когда заказ не был исполнен по вине Оператора и исполнение невозможно, либо возврат предусмотрен императивными нормами законодательства. Возврат за оплату по ошибке возможен, если Пользователь обратился сразу — в течение часа — и услуга ещё не оказана и никакие действия по ней не предпринимались.</p>
+        <p>11.2. Претензии принимаются по контактам из раздела 14 в течение разумного срока с момента оформления заказа. Оператор рассматривает претензии в разумный срок и предпринимает добросовестные усилия для урегулирования споров во внесудебном порядке.</p>
+
+        <h4>12. Интеллектуальная собственность</h4>
+        <p>12.1. Программный код, дизайн, тексты и иные материалы Сайта, созданные Оператором (в т. ч. с применением инструментов ИИ), принадлежат Оператору в той мере, в какой это признаёт законодательство. Копирование и использование материалов без согласия Оператора не допускается, кроме случаев, разрешённых законом.</p>
+        <p>12.2. Права на все упомянутые товарные знаки и продукты третьих лиц принадлежат их правообладателям (см. п. 2.4).</p>
+
+        <h4>13. Изменение Условий, применимое право, прочее</h4>
+        <p>13.1. Оператор вправе в любое время изменять Условия путём публикации новой редакции на Сайте; новая редакция вступает в силу с момента публикации, если не указано иное. Продолжение использования Сайта означает согласие. Пользователю рекомендуется периодически проверять актуальную редакцию.</p>
+        <p>13.2. Настоящие Условия регулируются законодательством Российской Федерации, без учёта коллизионных норм. Сайт размещён на сервере хостинг-провайдера AlexHost (Швеция). Споры подлежат рассмотрению в компетентном суде, если императивные нормы места жительства Пользователя не предусматривают иное.</p>
+        <p>13.3. Если какое-либо положение будет признано недействительным или неисполнимым, остальные сохраняют силу; недействительное положение заменяется действительным, максимально близким по смыслу.</p>
+        <p>13.4. Неиспользование Оператором какого-либо права не означает отказа от него.</p>
+        <p>13.5. Настоящие Условия составляют полное соглашение между Пользователем и Оператором в отношении использования Сайта и заменяют все предшествующие договорённости.</p>
+        <p>13.6. В случае расхождений между языковыми версиями приоритет имеет русскоязычная версия.</p>
+
+        <h4>14. Контакты</h4>
+        <p>По всем вопросам, связанным с Сайтом, Услугами и настоящими Условиями: Telegram — <a href="https://t.me/NoTelegramSupport" target="_blank" rel="noopener noreferrer">@NoTelegramSupport</a> · E-mail — <a href="mailto:NoTelegramSupport@gmail.com">NoTelegramSupport@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONTACTS / LINKS SHEET (work-status) ============ -->
+  <div id="linksOverlay" class="overlay" aria-hidden="true">
+    <div class="sheet links-sheet">
+      <div class="sheet-head">
+        <div class="sheet-title" data-i18n="linksTitle">Связь и режим работы</div>
+        <button type="button" class="sheet-close" id="linksClose" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="links-hours">
+        <span class="lh-row"><span class="lh-k" data-i18n="linksHoursK">Время работы</span><span class="lh-v">16:30–00:00 МСК</span></span>
+        <span class="lh-row"><span class="lh-k" data-i18n="linksAutoK">Авто-услуги</span><span class="lh-v" data-i18n="linksAutoV">Stars, Premium — 24/7, мгновенно</span></span>
+        <span class="lh-row"><span class="lh-k" data-i18n="linksManualK">Ручные заявки</span><span class="lh-v" data-i18n="linksManualV">ответ до 12 часов</span></span>
+      </div>
+      <div class="links-list" id="linksList">
+        <!-- TODO: заполни своими ссылками (скажешь — впишу) -->
+        <a class="link-row" href="https://t.me/awm_otziv" target="_blank" rel="noopener noreferrer">
+          <span class="link-ico">📣</span>
+          <span class="link-tx"><span class="link-name" data-i18n="linkReviews">Канал с отзывами</span><span class="link-sub">@awm_otziv</span></span>
+          <span class="link-go" aria-hidden="true">↗</span>
+        </a>
+        <a class="link-row link-tbd" href="#" data-link="support">
+          <span class="link-ico">💬</span>
+          <span class="link-tx"><span class="link-name" data-i18n="linkSupport">Поддержка / связь</span><span class="link-sub" data-i18n="linkTbd">ссылка появится позже</span></span>
+          <span class="link-go" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="serviceOverlay" class="overlay" aria-hidden="true">
+    <div class="sheet">
+      <div class="sheet-inner">
+        <div class="sheet-handle"></div>
+        <button class="close-x" data-close="service" type="button">×</button>
+        <div class="sheet-title" data-i18n="pickServiceTitle">Выберите услугу</div>
+        <div class="sheet-sub" data-i18n="pickServiceSub">Каждая услуга открывает свой сценарий. После выбора покажутся только нужные поля.</div>
+        <div id="serviceOptions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ USERNAME SHEET ============ -->
+  <div id="usernameOverlay" class="overlay" aria-hidden="true">
+    <div class="sheet">
+      <div class="sheet-inner">
+        <div class="sheet-handle"></div>
+        <button class="close-x" data-close="username" type="button">×</button>
+        <div class="sheet-title" data-i18n="usernameTitle">Последний шаг — юзернейм</div>
+        <div class="sheet-sub" data-i18n="usernameSub">Юзернейм нужен для связи и доставки. В коде оплаты он зашифрован.</div>
+        <div class="field">
+          <label class="label" for="usernameInput" data-i18n="yourTelegram">Ваш Telegram @username</label>
+          <div class="input-wrap">
+            <input id="usernameInput" class="input with-tools" type="text" placeholder="@username" autocomplete="username" name="awm_tg_username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+            <button class="tool-btn" type="button" data-tool-target="usernameInput" aria-label="Действие"></button>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button id="cancelUsername" class="sheet-btn" type="button" data-i18n="btnCancel">Отмена</button>
+          <button id="saveUsername" class="sheet-btn primary" type="button" data-i18n="btnSave">Сохранить и продолжить</button>
+        </div>
+        <div class="tg-login-sep"><span data-i18n="orWord">или</span></div>
+        <div class="auth-methods">
+          <button id="tgLoginBtn" class="tg-login-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+            <span class="auth-btn-tx">
+              <span class="auth-btn-title" data-i18n="regTgTitle">Регистрация через Telegram</span>
+              <span class="auth-btn-sub" data-i18n="regTgSub">Подтянем аватар и @username</span>
+            </span>
+          </button>
+          <button id="tgBotBtn" class="tg-login-btn ghost" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="6" width="16" height="13" rx="3"/><path d="M12 6V3M9 12v1M15 12v1M9.5 16.5a3.5 3.5 0 0 0 5 0"/></svg>
+            <span class="auth-btn-tx">
+              <span class="auth-btn-title" data-i18n="tgBot">Через бота</span>
+              <span class="auth-btn-sub" data-i18n="tgBotSub">Регистрация и заказы в чате</span>
+            </span>
+          </button>
+        </div>
+        <div class="tg-login-host" id="tgLoginHost" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RECEIPT / CART SHEET ============ -->
+  <div id="receiptOverlay" class="overlay" aria-hidden="true">
+    <div class="sheet receipt-sheet" data-cart-step="1">
+      <div class="cart-fx" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="sheet-inner">
+        <div class="sheet-handle"></div>
+        <button class="close-x" data-close="receipt" type="button">×</button>
+
+        <!-- Stepper -->
+        <div class="cart-steps" id="cartSteps">
+          <button class="cart-step is-active" type="button" data-go-step="1">
+            <span class="cs-num">1</span>
+            <span class="cs-label" data-i18n="cartStepItems">Состав</span>
+          </button>
+          <span class="cart-step-line"></span>
+          <button class="cart-step" type="button" data-go-step="2">
+            <span class="cs-num">2</span>
+            <span class="cs-label" data-i18n="cartStepDetails">Детали</span>
+          </button>
+          <span class="cart-step-line"></span>
+          <button class="cart-step" type="button" data-go-step="3">
+            <span class="cs-num">3</span>
+            <span class="cs-label" data-i18n="cartStepPay">Оплата</span>
+          </button>
+        </div>
+
+        <!-- ============== STAGE 1 — СОСТАВ ============== -->
+        <div class="cart-pane" data-pane="1">
+          <div class="order-card flow-frame">
+            <span class="order-ico" id="rcServiceIco" aria-hidden="true"></span>
+            <div class="order-body">
+              <div class="order-label" data-i18n="cartOrderLabel">Ваш заказ</div>
+              <div class="order-name" id="rcService">—</div>
+              <div class="order-save hidden" id="rcServiceSave"></div>
+            </div>
+            <div class="order-amount">
+              <span class="order-amount-ton" id="cartPreviewTon">0 TON</span>
+              <span class="order-amount-usd" id="cartPreviewUsd">≈ $0</span>
+            </div>
+          </div>
+
+          <!-- Per-service editable quantity / amount (built by JS) -->
+          <div class="cart-edit" id="cartEdit"></div>
+
+          <div class="cart-foot">
+            <div class="cart-foot-total">
+              <span class="cft-k" data-i18n="sumTotal">Итог к оплате</span>
+              <span class="cft-v" id="cartFootTotal">0 TON</span>
+            </div>
+            <button id="toStep2Btn" class="cta" type="button" data-go-step="2">
+              <span data-i18n="toDetails">Далее</span>
+              <span class="cta-amount">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ============== STAGE 2 — ДЕТАЛИ ============== -->
+        <div class="cart-pane" data-pane="2" hidden>
+          <!-- Recipient / wallet / contact (built by JS) -->
+          <div class="cart-details" id="cartDetails"></div>
+
+          <details class="order-acc" id="orderDetailsAcc" open>
+            <summary>
+              <span class="order-acc-ico">≣</span>
+              <span data-i18n="checkDetails">Проверить детали</span>
+              <span class="promo-acc-chev" aria-hidden="true">›</span>
+            </summary>
+            <div class="summary compact">
+            <div class="summary-row">
+              <span class="k" data-i18n="sumService">Услуга</span>
+              <span class="v" id="rcServiceMirror">—</span>
+            </div>
+            <div class="summary-row hidden" id="rcRecipientRow">
+              <span class="k" data-i18n="sumRecipient">Получатель</span>
+              <span class="v" id="rcRecipientVal">—</span>
+            </div>
+            <div class="summary-row" id="rcBaseRow">
+              <span class="k" id="rcBaseKey" data-i18n="sumBase">Сумма</span>
+              <span class="v" id="rcBaseVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="rcFeeRow">
+              <span class="k" id="rcFeeKey" data-i18n="sumFee">Комиссия</span>
+              <span class="v" id="rcFeeVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="rcDiscRow">
+              <span class="k" data-i18n="sumDiscount">Скидка</span>
+              <span class="v save" id="rcDiscVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="rcPromoRow">
+              <span class="k" data-i18n="sumPromo">Промокод</span>
+              <span class="v" id="rcPromoVal">—</span>
+            </div>
+            <div class="summary-row hidden" id="rcDonationRow">
+              <span class="k" data-i18n="sumDonation">Донат</span>
+              <span class="v" id="rcDonationVal">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="k" data-i18n="sumRate">Курс TON/USD</span>
+              <span class="v" id="rcRate">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="k" data-i18n="sumWhen">Дата / время</span>
+              <span class="v" id="rcWhen">—</span>
+            </div>
+            </div>
+          </details>
+
+          <div class="cart-foot">
+            <div class="cart-foot-total">
+              <span class="cft-k" data-i18n="sumTotal">Итог к оплате</span>
+              <span class="cft-v" id="cartFootTotal2">0 TON</span>
+            </div>
+            <div class="cart-foot-row">
+              <button id="backToStep1Btn" class="sheet-btn btn-back" type="button" data-go-step="1" data-i18n="backItems">← Состав</button>
+              <button id="toStep3Btn" class="cta" type="button" data-go-step="3">
+                <span data-i18n="toPay">К оплате</span>
+                <span class="cta-amount">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============== STAGE 3 — ОПЛАТА ============== -->
+        <div class="cart-pane pay-pane" data-pane="3" hidden>
+
+          <!-- Agreement gate — covers the whole pay screen until confirmed -->
+          <div class="agree-block" id="agreeBlock">
+            <div class="agree-inner">
+              <div class="agree-head">
+                <span class="agree-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>
+                </span>
+                <span class="agree-title" data-i18n="agreeTitle">Перед оплатой</span>
+              </div>
+              <div class="agree-scroll">
+                <div class="agree-warn" id="agreeWarn"></div>
+                <div class="agree-hours-warn" id="agreeHoursWarn" hidden></div>
+                <ul class="agree-rules">
+                  <li data-i18n="agreeRule1">Я ознакомился с условиями услуги и согласен с ними.</li>
+                  <li data-i18n="agreeRule2">Возврат возможен только если ошибка по вине сервиса, а не по невнимательности. Спорные случаи — через поддержку.</li>
+                  <li class="agree-rule-strong" data-i18n="agreeRule3">За уже оказанные услуги возврата нет.</li>
+                </ul>
+              </div>
+              <div class="agree-confirm">
+                <div class="agree-ack" id="agreeAck" aria-hidden="true">
+                  <span class="agree-ack-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  </span>
+                  <span class="agree-ack-tx" data-i18n="agreeAck">Я прочитал детали заказа и согласен с условиями</span>
+                </div>
+                <div class="slide-confirm" id="slideConfirm" aria-label="Проведите для подтверждения">
+                  <div class="slide-track" id="slideTrack">
+                    <span class="slide-sheen" aria-hidden="true"></span>
+                    <span class="slide-label" id="slideLabel" data-i18n="agreeSlide">Ознакомлен — проведите для оплаты</span>
+                    <span class="slide-chevrons" aria-hidden="true"><i>›</i><i>›</i><i>›</i></span>
+                    <button class="slide-thumb" id="slideThumb" type="button" aria-label="Подтвердить">
+                      <span class="slide-thumb-arrow" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      </span>
+                      <span class="slide-thumb-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <button class="agree-back" id="agreeBackBtn" type="button" data-go-step="2">
+                  <span aria-hidden="true">←</span>
+                  <span data-i18n="agreeBack">Вернуться к деталям</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pay body — revealed only after the agreement is confirmed -->
+          <div class="pay-body" id="payBody">
+            <div class="pay-top">
+              <span class="pay-top-save hidden" id="payTopSave"></span>
+              <div class="pay-top-row">
+                <div class="pay-top-lead">
+                  <span class="pay-top-k" data-i18n="payTotalLabel">К оплате</span>
+                  <span class="pay-top-amt" id="rcTotal">—</span>
+                </div>
+                <div class="pay-top-fiat" id="rcTotalFiat"></div>
+              </div>
+            </div>
+
+            <!-- Что оплачивается: услуга, юзернейм, кому -->
+            <div class="pay-svc-note" id="paySvcNote" hidden></div>
+
+            <!-- Donation — optional, with live multi-currency value -->
+            <div class="tip-plate" id="tipPlate">
+              <div class="tip-row">
+                <div class="tip-label">
+                  <span class="tip-title" data-i18n="donateTitle">Чаевые сервису</span>
+                  <span class="tip-note" data-i18n="donateSub">Необязательно — на ваше усмотрение.</span>
+                </div>
+                <div class="tip-amount-wrap">
+                  <span class="tip-amount" id="donationTotal">+0 TON</span>
+                  <span class="tip-amount-fiat" id="donationFiat"></span>
+                </div>
+              </div>
+              <div class="tip-sub-label" data-i18n="donatePercentLabel">Процент от заказа</div>
+              <div class="tip-options" id="donationPills">
+                <button class="tip-opt" type="button" data-donation="1">1%</button>
+                <button class="tip-opt" type="button" data-donation="2">2%</button>
+                <button class="tip-opt" type="button" data-donation="5">5%</button>
+                <button class="tip-opt" type="button" data-donation="10">10%</button>
+                <button class="tip-opt" type="button" data-donation="15">15%</button>
+                <button class="tip-opt" type="button" data-donation="20">20%</button>
+                <button class="tip-opt" type="button" data-donation="25">25%</button>
+                <button class="tip-opt" type="button" data-donation="50">50%</button>
+                <button class="tip-opt" type="button" data-donation="75">75%</button>
+                <button class="tip-opt" type="button" data-donation="100">100%</button>
+              </div>
+              <div class="donate-custom">
+                <span class="donate-custom-label" data-i18n="donateCustom">Своя сумма (можно вместе с процентом)</span>
+                <div class="input-wrap">
+                  <input id="donationInput" class="input with-tools" type="text" inputmode="decimal" min="0" step="0.1" placeholder="0.1" autocomplete="off" />
+                  <span class="input-suffix">TON</span>
+                  <button class="tool-btn" type="button" data-tool-target="donationInput" aria-label="Действие"></button>
+                </div>
+              </div>
+              <div class="donate-thanks" id="donateThanks" hidden data-i18n="donateThanks">Спасибо за поддержку.</div>
+            </div>
+
+            <!-- Промокод + скидка на заказ -->
+            <div class="promo-disc-row">
+              <div class="promo-field">
+                <span class="pdr-label" data-i18n="promoTitle">Промокод</span>
+                <div class="input-wrap">
+                  <span class="input-prefix">#</span>
+                  <input id="promoInput" class="input with-prefix with-tools" type="text" maxlength="24" placeholder="AWM10" autocomplete="off" />
+                  <button class="tool-btn" type="button" data-tool-target="promoInput" aria-label="Действие"></button>
+                </div>
+                <div id="promoStatus" class="promo-status"></div>
+              </div>
+              <div class="disc-card" id="discCard" data-on="false">
+                <span class="dc-label" data-i18n="discCardLabel">Скидка на заказ</span>
+                <span class="dc-val" id="discCardVal">—</span>
+                <span class="dc-sub" id="discCardSub"></span>
+              </div>
+            </div>
+
+            <div id="rcOk" class="ok-text"></div>
+            <div id="rcWarn" class="warn-text"></div>
+
+            <!-- Secure pay: rotating QR + code (lower on the page). Refreshes every
+                 15s (anti-fraud), freezes on the receipt. Tap the QR to enlarge. -->
+            <div class="securepay flow-frame pay-glow" id="securePay">
+              <button class="sp-qr" id="qrTap" type="button" aria-label="Открыть QR и проверку оплаты">
+                <div class="qr-canvas" id="qrCanvas" aria-label="QR-код для оплаты"></div>
+                <span class="sp-zoom" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4"/></svg>
+                </span>
+                <span class="qr-bar" aria-hidden="true"><i id="codeBar"></i></span>
+              </button>
+              <div class="sp-side">
+                <div class="sp-code-head">
+                  <span class="sp-code-label" data-i18n="codeLabel">Код оплаты</span>
+                  <span class="sp-ttl" aria-hidden="true"><b id="codeTtl">10:00</b></span>
+                </div>
+                <div class="sp-code-row">
+                  <span class="sp-code" id="rcCode">—</span>
+                  <button id="rcCopyCode" class="sp-copy" type="button" title="Копировать">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+                  </button>
+                </div>
+                <button class="sp-open-hint" id="qrOpenHint" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4"/></svg>
+                  <span data-i18n="qrOpenHint">Открыть QR и проверку оплаты</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="sheet-actions">
+              <a id="postActionBtn" class="sheet-btn hidden" href="https://t.me/NoTelegramSupport" target="_blank" rel="noopener noreferrer"></a>
+              <a id="payNow" class="cta cta-pay" href="#" target="_blank" rel="noopener noreferrer">
+                <span data-i18n="payNow">Оплатить</span>
+                <span class="cta-amount" id="payNowAmount">· 0 TON</span>
+              </a>
+              <div class="pay-share-row">
+                <button id="copyLinkBtn" class="sheet-btn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+                  <span data-i18n="copyLink">Скопировать</span>
+                </button>
+                <button id="shareTgBtn" class="sheet-btn share-tg" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
+                  <span data-i18n="shareTg">Поделиться</span>
+                </button>
+              </div>
+              <div class="pay-actions-row">
+                <button id="backToStep2Btn" class="sheet-btn btn-back" type="button" data-go-step="2" data-i18n="backDetails">← Детали</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============== STAGE 4 — ЧЕК (on-chain receipt) ============== -->
+        <div class="cart-pane" data-pane="4" hidden>
+          <!-- On-chain payment verification -->
+          <div class="verify-block" id="verifyBlock">
+            <div class="verify-status" id="verifyStatus" data-state="idle">
+              <span class="verify-spinner" aria-hidden="true"></span>
+              <span class="verify-ico-ok" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </span>
+              <div class="verify-text">
+                <div class="verify-title" id="verifyTitle">Ждём оплату…</div>
+                <div class="verify-sub" id="verifySub">Проверяем блокчейн TON автоматически</div>
+              </div>
+              <button class="verify-recheck" id="verifyRecheck" type="button" title="Проверить сейчас">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+              </button>
+            </div>
+            <div class="verify-progress" id="verifyProgress" aria-hidden="true"><i></i></div>
+          </div>
+
+          <!-- Real notelegram.com receipt — built only after on-chain confirmation -->
+          <div class="real-receipt" id="verifyReceipt" hidden>
+            <div class="rr-head">
+              <div class="rr-brand">
+                <span class="rr-brand-dot" aria-hidden="true"></span>
+                <span class="rr-brand-name">notelegram<span class="rr-brand-tld">.com</span></span>
+              </div>
+              <div class="rr-status" id="rrStatusBadge" data-i18n="rrConfirmed">ОПЛАЧЕНО ✓</div>
+            </div>
+            <div class="rr-amount">
+              <span class="rr-amount-ton" id="rrAmountTon">— TON</span>
+              <span class="rr-amount-fiat" id="rrAmountFiat">≈ $0 · ₽0</span>
+            </div>
+            <div class="rr-perf" data-i18n="rrTagline">Платёж подтверждён в блокчейне TON</div>
+
+            <div class="rr-grid">
+              <div class="rr-row"><span class="rr-k" data-i18n="sumService">Услуга</span><span class="rr-v" id="rrService">—</span></div>
+              <div class="rr-row" id="rrRecipientRow" hidden><span class="rr-k" data-i18n="sumRecipient">Получатель</span><span class="rr-v" id="rrRecipient">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="rrPayer">Плательщик</span><span class="rr-v" id="rrPayer">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="codeLabel">Код</span><span class="rr-v rr-mono" id="rrCode">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="sumRate">Курс TON/USD</span><span class="rr-v" id="rrRate">—</span></div>
+              <div class="rr-sep"></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="vrPaid">Оплачено</span><span class="rr-v" id="vrPaidAmt">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="vrTx">Транзакция</span><span class="rr-v rr-mono" id="vrTxHash">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="vrTime">Подтверждено</span><span class="rr-v" id="vrTime">—</span></div>
+              <div class="rr-row"><span class="rr-k" data-i18n="rcWallet">Кошелёк</span><span class="rr-v rr-mono" id="rrWallet">—</span></div>
+            </div>
+
+            <div class="rr-foot">
+              <span class="rr-foot-id" id="rrFootId">notelegram.com</span>
+              <span class="rr-foot-hash" id="rrIssued">—</span>
+            </div>
+
+            <div class="vr-actions">
+              <button class="sheet-btn" id="vrDownload" type="button" data-i18n="vrDownload">Скачать PDF</button>
+              <a class="sheet-btn" id="vrExplorer" href="#" target="_blank" rel="noopener noreferrer" data-i18n="vrExplorer">В эксплорере</a>
+            </div>
+          </div>
+
+          <div class="cart-foot">
+            <div class="cart-foot-row">
+              <button id="backToStep3Btn" class="sheet-btn btn-back" type="button" data-go-step="3" data-i18n="backPay">← Оплата</button>
+              <a id="receiptSupportBtn" class="sheet-btn" href="https://t.me/NoTelegramSupport" target="_blank" rel="noopener noreferrer" data-i18n="receiptSupport">Поддержка</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ QR ZOOM (branded, enlarged) ============ -->
+  <div id="qrZoomOverlay" class="qrzoom-overlay" aria-hidden="true">
+    <div class="qrzoom-card glass flow-frame">
+      <button class="qrzoom-close" id="qrZoomClose" type="button" aria-label="Закрыть">×</button>
+      <div class="qrzoom-brand">
+        <span class="qrzoom-brand-dot" aria-hidden="true"></span>
+        <span class="qrzoom-brand-name">notelegram<span class="qrzoom-brand-tld">.com</span></span>
+      </div>
+      <div class="qrzoom-frame">
+        <div class="qrzoom-canvas" id="qrZoomCanvas"></div>
+        <div class="qr-found" id="qrZoomFound" hidden aria-hidden="true">
+          <svg viewBox="0 0 52 52" class="qr-found-tick"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-16"/></svg>
+        </div>
+      </div>
+      <div class="qrzoom-amt" id="qrZoomAmt">— TON</div>
+      <div class="qrzoom-meta" id="qrZoomMeta"></div>
+      <div class="qrzoom-coderow">
+        <span class="qrzoom-code" id="qrZoomCode">#—</span>
+      </div>
+      <div class="qrzoom-watch" id="qrZoomWatch" data-state="searching">
+        <span class="qrz-dot" aria-hidden="true"></span>
+        <span class="qr-watch-tx" id="qrZoomWatchTx" data-i18n="watchAuto">Ищем оплату в блокчейне…</span>
+        <span class="qrz-timer" aria-hidden="true"><b id="qrZoomTtl">10:00</b></span>
+      </div>
+      <span id="qrZoomBar" hidden></span>
+      <div class="qrzoom-actions">
+        <button class="qrz-act" id="qrZoomFull" type="button" title="На весь экран" aria-label="На весь экран">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
+        <button class="qrz-act" id="qrZoomSave" type="button" title="Сохранить" aria-label="Сохранить">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        </button>
+        <button class="qrz-act qrz-share" id="qrZoomShare" type="button" title="Поделиться" aria-label="Поделиться">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
+        </button>
+        <button class="qrz-act" id="qrZoomNew" type="button" title="Новый код" aria-label="Новый код">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INFO SHEET ============ -->
+  <div id="infoOverlay" class="overlay" aria-hidden="true">
+    <div class="sheet">
+      <div class="sheet-inner">
+        <div class="sheet-handle"></div>
+        <button class="close-x" data-close="info" type="button">×</button>
+        <div class="sheet-title" data-i18n="infoTitle">Информация</div>
+        <div class="sheet-sub" data-i18n="infoSub">Как работает сайт, как считается цена, что такое индивидуальный код и что происходит после оплаты.</div>
+
+        <div class="info-tabs" id="infoTabs">
+          <button class="info-tab-btn active" type="button" data-tab="about" data-i18n="tabAbout">Общее</button>
+          <button class="info-tab-btn" type="button" data-tab="flow" data-i18n="tabFlow">Как это работает</button>
+          <button class="info-tab-btn" type="button" data-tab="faq" data-i18n="tabFaq">FAQ</button>
+        </div>
+
+        <div class="info-pane" data-pane="about">
+          <div class="info-card">
+            <div class="info-card-title" data-i18n="i_about_1_t">Что это</div>
+            <div class="info-card-text" data-i18n="i_about_1_b">Мини-аппка для быстрой оплаты услуг в TON. Без личных кабинетов, без регистрации — только то, что нужно для платежа.</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title" data-i18n="i_about_2_t">Как формируется цена</div>
+            <div class="info-card-text" data-i18n="i_about_2_b">Все суммы считает единый pricing engine. Курс TON/USD обновляется <b>каждые 15 секунд</b>. Stars и Premium всегда показываются в USD и TON одновременно.</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title" data-i18n="i_about_3_t">Индивидуальный код</div>
+            <div class="info-card-text" data-i18n="i_about_3_b">На каждую заявку генерируется уникальный код <code>#XXXXXX-SVC-AMT-RND</code>. Username в нём — зашифрованный, исходного юзернейма в открытом виде нет.</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title" data-i18n="i_about_4_t">Чек</div>
+            <div class="info-card-text" data-i18n="i_about_4_b">В чеке всегда видно: услугу, сумму, комиссию, курс, код, время и итог. Один и тот же код повторяется в комментарии к платежу и в ссылке.</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title" data-i18n="i_about_5_t">Скорость и проверка</div>
+            <div class="info-card-text" data-i18n="i_about_5_b">После оплаты заявка сверяется вручную по коду. В пиковые часы ожидание может занять до 24 часов.</div>
+          </div>
+        </div>
+
+        <div class="info-pane hidden" data-pane="flow">
+          <div class="info-card"><div class="info-card-title" data-i18n="i_flow_1_t">1. Выберите услугу</div><div class="info-card-text" data-i18n="i_flow_1_b">Откройте список услуг. Появятся только нужные поля.</div></div>
+          <div class="info-card"><div class="info-card-title" data-i18n="i_flow_2_t">2. Введите данные</div><div class="info-card-text" data-i18n="i_flow_2_b">Сумма, ставка, количество звёзд или срок Premium. Сумма мгновенно пересчитывается в USD и TON.</div></div>
+          <div class="info-card"><div class="info-card-title" data-i18n="i_flow_3_t">3. Откройте корзину</div><div class="info-card-text" data-i18n="i_flow_3_b">Корзина выезжает снизу. В ней — чек, код оплаты, ссылка, кнопка оплаты, промокод и донат.</div></div>
+          <div class="info-card"><div class="info-card-title" data-i18n="i_flow_4_t">4. Оплатите через Tonkeeper</div><div class="info-card-text" data-i18n="i_flow_4_b">Ссылка открывает Tonkeeper с заполненными реквизитами. Сумма уже зафиксирована.</div></div>
+          <div class="info-card"><div class="info-card-title" data-i18n="i_flow_5_t">5. После оплаты</div><div class="info-card-text" data-i18n="i_flow_5_b">Сохраните чек. Если это минт или повышение ставки — передайте тег и канал в Telegram.</div></div>
+        </div>
+
+        <div class="info-pane hidden" data-pane="faq">
+          <div class="faq-item"><div class="faq-q" data-i18n="i_faq_1_q">Зачем нужен username?</div><div class="faq-a" data-i18n="i_faq_1_a">Чтобы понять, чья оплата пришла. В коде он не светится в открытом виде — только зашифрованный хэш.</div></div>
+          <div class="faq-item"><div class="faq-q" data-i18n="i_faq_2_q">Как считается цена Stars и Premium?</div><div class="faq-a" data-i18n="i_faq_2_a">1 звезда = $0.015. Premium 3/6/12 мес. = $12 / $16 / $29 + 5% сервиса. Всё пересчитывается в TON по живому курсу.</div></div>
+          <div class="faq-item"><div class="faq-q" data-i18n="i_faq_3_q">Что если курс изменится?</div><div class="faq-a" data-i18n="i_faq_3_a">Сумма обновляется автоматически. На момент нажатия «Оплатить» фиксируется значение, которое вы видите.</div></div>
+          <div class="faq-item"><div class="faq-q" data-i18n="i_faq_4_q">Что делать после оплаты?</div><div class="faq-a" data-i18n="i_faq_4_a">Сохраните чек и ждите связи. Для минта и boost — передайте данные в Telegram.</div></div>
+          <div class="faq-item"><div class="faq-q" data-i18n="i_faq_5_q">Можно ли вернуть деньги?</div><div class="faq-a" data-i18n="i_faq_5_a">До начала выполнения — да, по запросу в поддержку с указанием кода оплаты.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ COPY FALLBACK OVERLAY ============ -->
+  <div id="copyFallback" class="copy-fallback-overlay" aria-hidden="true">
+    <div class="copy-fallback-card">
+      <h3 id="cfTitle">Скопировать вручную</h3>
+      <p id="cfNote">Нажмите внутри поля, выделите всё (Ctrl/Cmd+A) и скопируйте (Ctrl/Cmd+C). На мобиле — длинный тап → «Копировать».</p>
+      <textarea id="cfText" readonly></textarea>
+      <div class="copy-fallback-actions">
+        <button id="cfClose" type="button">Закрыть</button>
+        <button id="cfTry" class="primary" type="button">Попробовать ещё</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HINTS DOCK ============ -->
+  <div id="hintDock" class="hint-dock collapsed" data-screen-label="hints">
+    <button class="hint-tab" id="hintTab" type="button" aria-label="Подсказки по управлению" aria-expanded="false">
+      <svg class="ht-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.4-2.6 2.4"/><path d="M12 17h.01"/></svg>
+      <svg class="ht-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
+    <div class="hint-panel" id="hintPanel" role="dialog" aria-label="Управление">
+      <div class="hint-grip" id="hintGrip" aria-hidden="true"></div>
+      <div class="hint-body">
+        <div class="hint-head">
+          <span class="hint-kicker" id="hintKicker">Управление</span>
+          <span class="hint-mode" id="hintMode">—</span>
+          <button class="hint-x" id="hintClose" type="button" aria-label="Свернуть">›</button>
+        </div>
+        <div class="hint-list" id="hintList"></div>
+        <div class="hint-foot" id="hintFoot">Свайпните вправо, чтобы свернуть</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG icon sprite (used via <use>) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="ico-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0 0 4h15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16.5" cy="11.5" r="1.2" fill="currentColor"/></symbol>
+      <symbol id="ico-mint" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 7l8 4 8-4M12 11v10" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-boost" viewBox="0 0 24 24"><path d="M4 14l8-10 8 10h-4v6h-8v-6H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-star" viewBox="0 0 24 24"><path d="M12 3.5l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.9l6-.9L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-premium" viewBox="0 0 24 24"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5L3 8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-deal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></g></symbol>
+    </defs>
+  </svg>
+
+  <!-- ============ TWEAKS PANEL ============ -->
+  <div id="tweaksPanel" class="tweaks-panel" hidden aria-label="Tweaks">
+    <div class="tweaks-head">
+      <span class="tweaks-title">Tweaks</span>
+      <button id="tweaksClose" class="tweaks-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="tweaks-body">
+      <div class="tweak-note">Цвет интерфейса подбирается под выбранную услугу автоматически.</div>
+      <div class="tweak-block">
+        <div class="tweak-label-row">
+          <span class="tweak-label">Атмосфера</span>
+          <span class="tweak-val" id="twAtmoVal">Норма</span>
+        </div>
+        <input id="twAtmo" class="tweak-range" type="range" min="0.2" max="1.8" step="0.1" value="1" />
+        <div class="tweak-scale"><span>Спокойно</span><span>Живо</span></div>
+      </div>
+      <div class="tweak-block">
+        <div class="tweak-label">Геометрия фона</div>
+        <div class="tweak-seg" id="twGeo" role="tablist">
+          <button type="button" data-geo="layered">Слои</button>
+          <button type="button" data-geo="flat">Плоско</button>
+          <button type="button" data-geo="off">Выкл</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tweakable defaults (host rewrites this block on disk).
+    window.AWM_TWEAKS = /*EDITMODE-BEGIN*/{
+      "atmosphere": 1.8,
+      "geometry": "layered"
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- TonConnect UI SDK — real wallet linking (Tonkeeper, etc). Safe to keep;
+       connect.js only activates it once you set wallet.tonconnectManifest in
+       assets/payment-config.js. -->
+  <script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
+  <!-- ВАШ личный конфиг (кошелёк, ключи, домен backend, бот). Меняете только
+       его — он переопределяет значения по умолчанию и подходит к любой версии
+       сайта. Грузится ПЕРЕД payment-config.js. -->
+  <script src="my-config.js"></script>
+  <script src="assets/payment-config.js?v=2"></script>
+  <script src="assets/pricing.js?v=3"></script>
+  <script src="assets/qr.js"></script>
+  <script src="assets/app.js?v=16"></script>
+  <script src="assets/scenes.js?v=17"></script>
+  <script src="assets/hours.js?v=6"></script>
+  <script src="assets/enhance.js?v=2"></script>
+  <script src="assets/connect.js"></script>
+  <script src="assets/reviews.js"></script>
+  <script src="assets/idlehint.js"></script>
+  <script src="assets/verify.js?v=4"></script>
+  <script src="assets/tweaks.js"></script>
+</body>
+</html>
